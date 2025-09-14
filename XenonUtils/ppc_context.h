@@ -2,7 +2,7 @@
 #define PPC_CONTEXT_H_INCLUDED
 
 #ifndef PPC_CONFIG_H_INCLUDED
-#error "ppc_config.h must be included before ppc_context.h"
+#include "ppc_config.h"
 #endif
 
 #include <climits>
@@ -113,7 +113,7 @@
 #define PPC_CALL_INDIRECT_FUNC(x) (PPC_LOOKUP_FUNC(base, x))(ctx, base)
 #endif
 
-typedef void PPCFunc(struct PPCContext& __restrict__ ctx, uint8_t* base);
+typedef void PPCFunc(struct PPCContext& __restrict ctx, uint8_t* base);
 
 struct PPCFuncMapping
 {
@@ -166,7 +166,7 @@ struct PPCCRRegister
 
     inline void compare(double left, double right) noexcept
     {
-        un = __builtin_isnan(left) || __builtin_isnan(right);
+        un = std::isnan(left) || std::isnan(right);
         lt = !un && (left < right);
         gt = !un && (left > right);
         eq = !un && (left == right);
