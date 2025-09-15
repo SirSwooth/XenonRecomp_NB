@@ -2519,6 +2519,20 @@ bool Recompiler::Recompile(
                 v(insn.operands[0]), i, v(insn.operands[1]), i, v(insn.operands[2]), i);
         break;
 
+    case PPC_INST_VSRO:
+    case PPC_INST_VSRO128:
+        // Vector shift right octet
+        // shb ← (vB)121:124
+        // vD ← (vA) >>ui (shb || 0b000)
+        println("\t{}.u8 = std::min(uint8_t(({}.u8[15] >> 1) & 0xF), uint8_t(16));", temp(), v(insn.operands[2]));
+        println("\tif ({}.u8 == 16) {{", temp());
+        println("\t\t_mm_store_si128((__m128i*){}.u8, _mm_setzero_si128());", v(insn.operands[0]));
+        println("\t}} else {{");
+        println("\t\t_mm_store_si128((__m128i*){}.u8, _mm_srli_si128(_mm_load_si128((__m128i*){}.u8), {}.u8));", v(insn.operands[0]), v(insn.operands[1]), temp());
+        println("\t}}");
+        break;
+    
+
     case PPC_INST_VRLH:
         // Vector rotate left halfword
         for (size_t i = 0; i < 8; i++)
