@@ -29,8 +29,20 @@ void ReadTable(Image& image, SwitchTable& table)
     ppc::Disassemble(code, table.base, insn);
     pOffset = insn.operands[1] << 16;
 
-    ppc::Disassemble(code + 1, table.base + 4, insn);
-    pOffset += insn.operands[2];
+    // ADDI
+    if (table.type == SWITCH_ABSOLUTE || table.type == SWITCH_SHORTOFFSET)
+    {
+        ppc::Disassemble(code + 2, table.base + 8, insn);
+        pOffset += insn.operands[2];
+    }
+    else
+    {
+        ppc::Disassemble(code + 1, table.base + 4, insn);
+        pOffset += insn.operands[2];
+    }
+
+
+
 
     if (table.type == SWITCH_ABSOLUTE)
     {
@@ -49,7 +61,7 @@ void ReadTable(Image& image, SwitchTable& table)
         ppc::Disassemble(code + 4, table.base + 0x10, insn);
         base = insn.operands[1] << 16;
 
-        ppc::Disassemble(code + 5, table.base + 0x14, insn);
+        ppc::Disassemble(code + 6, table.base + 0x14 + 4, insn);
         base += insn.operands[2];
 
         ppc::Disassemble(code + 3, table.base + 0x0C, insn);
@@ -70,7 +82,7 @@ void ReadTable(Image& image, SwitchTable& table)
             ppc::Disassemble(code + 3, table.base + 0x0C, insn);
             base = insn.operands[1] << 16;
 
-            ppc::Disassemble(code + 4, table.base + 0x10, insn);
+            ppc::Disassemble(code + 5, table.base + 0x10 + 4, insn);
             base += insn.operands[2];
 
             for (size_t i = 0; i < table.labels.size(); i++)
@@ -105,7 +117,7 @@ void ScanTable(const uint32_t* code, size_t base, SwitchTable& table)
 {
     ppc_insn insn;
     uint32_t cr{ (uint32_t)-1 };
-    for (int i = 0; i < 64; i++)
+    for (int i = 0; i < 32; i++)
     {
         ppc::Disassemble(&code[-i], base - (4 * i), insn);
         if (insn.opcode == nullptr)
@@ -113,11 +125,7 @@ void ScanTable(const uint32_t* code, size_t base, SwitchTable& table)
             continue;
         }
 
-        // Handle conditional branches
-        if (cr == -1 && (insn.opcode->id == PPC_INST_BGT ||
-            insn.opcode->id == PPC_INST_BGTLR ||
-            insn.opcode->id == PPC_INST_BLE ||
-            insn.opcode->id == PPC_INST_BLELR))
+        if (cr == -1 && (insn.opcode->id == PPC_INST_BGT || insn.opcode->id == PPC_INST_BGTLR || insn.opcode->id == PPC_INST_BLE || insn.opcode->id == PPC_INST_BLELR))
         {
             cr = insn.operands[0];
             if (insn.opcode->operands[1] != 0)
@@ -125,26 +133,15 @@ void ScanTable(const uint32_t* code, size_t base, SwitchTable& table)
                 table.defaultLabel = insn.operands[1];
             }
         }
-        // Handle CMPLWI even if branch not found yet
-        else if (insn.opcode->id == PPC_INST_CMPLWI)
+        else if (cr != -1)
         {
-            // Only process if we haven't found labels yet
-            if (table.labels.empty())
+            if (insn.opcode->id == PPC_INST_CMPLWI && insn.operands[0] == cr)
             {
                 table.r = insn.operands[1];
                 table.labels.resize(insn.operands[2] + 1);
                 table.base = base;
+                break;
             }
-        }
-        // Handle CMPLWI after branch detection
-        else if (cr != -1 &&
-            insn.opcode->id == PPC_INST_CMPLWI &&
-            insn.operands[0] == cr)
-        {
-            table.r = insn.operands[1];
-            table.labels.resize(insn.operands[2] + 1);
-            table.base = base;
-            break;
         }
     }
 }
@@ -265,16 +262,19 @@ int main(int argc, char** argv)
             }
         };
 
+
+    // match
     uint32_t absoluteSwitch[] =
     {
         PPC_INST_LIS,
-        PPC_INST_ADDI,
         PPC_INST_RLWINM,
+        PPC_INST_ADDI,
         PPC_INST_LWZX,
         PPC_INST_MTCTR,
         PPC_INST_BCTR,
     };
 
+    //match
     uint32_t computedSwitch[] =
     {
         PPC_INST_LIS,
@@ -282,30 +282,37 @@ int main(int argc, char** argv)
         PPC_INST_LBZX,
         PPC_INST_RLWINM,
         PPC_INST_LIS,
+        PPC_INST_NOP, //
         PPC_INST_ADDI,
         PPC_INST_ADD,
         PPC_INST_MTCTR,
     };
 
+
+    // match
     uint32_t offsetSwitch[] =
     {
         PPC_INST_LIS,
         PPC_INST_ADDI,
         PPC_INST_LBZX,
         PPC_INST_LIS,
+        PPC_INST_NOP, //
         PPC_INST_ADDI,
+        PPC_INST_NOP, //
         PPC_INST_ADD,
         PPC_INST_MTCTR,
     };
 
+    //match
     uint32_t wordOffsetSwitch[] =
     {
         PPC_INST_LIS,
-        PPC_INST_ADDI,
-        PPC_INST_RLWINM,
+        PPC_INST_RLWINM, //
+        PPC_INST_ADDI, //
         PPC_INST_LHZX,
         PPC_INST_LIS,
         PPC_INST_ADDI,
+        PPC_INST_NOP, //
         PPC_INST_ADD,
         PPC_INST_MTCTR,
     };
