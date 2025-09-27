@@ -2524,12 +2524,17 @@ bool Recompiler::Recompile(
         // Vector shift right octet
         // shb ← (vB)121:124
         // vD ← (vA) >>ui (shb || 0b000)
-        println("\t{}.u8 = std::min(uint8_t(({}.u8[15] >> 1) & 0xF), uint8_t(16));", temp(), v(insn.operands[2]));
-        println("\tif ({}.u8 == 16) {{", temp());
-        println("\t\t_mm_store_si128((__m128i*){}.u8, _mm_setzero_si128());", v(insn.operands[0]));
-        println("\t}} else {{");
-        println("\t\t_mm_store_si128((__m128i*){}.u8, _mm_srli_si128(_mm_load_si128((__m128i*){}.u8), {}.u8));", v(insn.operands[0]), v(insn.operands[1]), temp());
-        println("\t}}");
+        println("\t{}.u8 = uint8_t(({}.u8[0] & 0x78) >> 3);", temp(), v(insn.operands[2]));
+        println("\t_mm_store_si128((__m128i*){}.u8, _mm_srli_si128(_mm_load_si128((__m128i*){}.u8), {}.u8));", v(insn.operands[0]), v(insn.operands[1]), temp());
+        break;
+    
+    case PPC_INST_VSLO:
+    case PPC_INST_VSLO128:
+        // Vector shift left octet
+        // shb ← (vB)121:124
+        // vD ← (vA) <<ui (shb || 0b000)
+        println("\t{}.u8 = uint8_t(({}.u8[0] & 0x78) >> 3);", temp(), v(insn.operands[2]));
+        println("\t_mm_store_si128((__m128i*){}.u8, _mm_slli_si128(_mm_load_si128((__m128i*){}.u8), {}.u8));", v(insn.operands[0]), v(insn.operands[1]), temp());
         break;
     
 
