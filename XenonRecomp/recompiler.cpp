@@ -2181,6 +2181,12 @@ bool Recompiler::Recompile(
             println("\t{}.setFromMask(_mm_load_ps({}.f32), 0xF);", cr(6), v(insn.operands[0]));
         break;
 
+    case PPC_INST_VCMPGTSH:
+        println("\t_mm_store_si128((__m128i*){}.s8, _mm_cmpgt_epi16(_mm_load_si128((__m128i*){}.u16), _mm_load_si128((__m128i*){}.u16)));", v(insn.operands[0]), v(insn.operands[1]), v(insn.operands[2]));
+        if (strchr(insn.opcode->name, '.'))
+            println("\t{}.setFromMask(_mm_load_si128((__m128i*){}.s16), 0xFFFF);", cr(6), v(insn.operands[0]));
+        break;
+
     case PPC_INST_VCMPGTUB:
         println("\t_mm_store_si128((__m128i*){}.u8, _mm_cmpgt_epu8(_mm_load_si128((__m128i*){}.u8), _mm_load_si128((__m128i*){}.u8)));", v(insn.operands[0]), v(insn.operands[1]), v(insn.operands[2]));
         break;
