@@ -2509,6 +2509,13 @@ bool Recompiler::Recompile(
                 v(insn.operands[0]), i, v(insn.operands[1]), i, v(insn.operands[2]), i);
         break;
 
+    case PPC_INST_VSRB:
+        for (size_t i = 0; i < 16; i++)
+        {
+            println("\t{}.u8[{}] = {}.u8[{}] >> ( {}.u8[{}] & 7 );", v(insn.operands[0]), i, v(insn.operands[1]), i, v(insn.operands[2]), i);
+        }
+        break;
+
     case PPC_INST_VSRAH:
         // Vector shift right algebraic halfword
         for (size_t i = 0; i < 8; i++)
