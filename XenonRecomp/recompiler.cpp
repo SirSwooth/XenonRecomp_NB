@@ -819,6 +819,20 @@ bool Recompiler::Recompile(
         println("\t{0}.u64 = {1}.u32 == 0 ? 32 : __builtin_clz({1}.u32);", r(insn.operands[0]), r(insn.operands[1]));
         break;
 
+    case PPC_INST_CROR:
+    {
+        constexpr std::string_view fields[] = { "lt", "gt", "eq", "so" };
+        println("\t{}.{} = {}.{} | {}.{};", cr(insn.operands[0] / 4), fields[insn.operands[0] % 4], cr(insn.operands[1] / 4), fields[insn.operands[1] % 4], cr(insn.operands[2] / 4), fields[insn.operands[2] % 4]);
+        break;
+    }
+
+    case PPC_INST_CRORC:
+    {
+        constexpr std::string_view fields[] = { "lt", "gt", "eq", "so" };
+        println("\t{}.{} = {}.{} | (~{}.{} & 1);", cr(insn.operands[0] / 4), fields[insn.operands[0] % 4], cr(insn.operands[1] / 4), fields[insn.operands[1] % 4], cr(insn.operands[2] / 4), fields[insn.operands[2] % 4]);
+        break;
+    }
+
     case PPC_INST_DB16CYC:
         // no op
         break;
