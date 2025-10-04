@@ -2549,6 +2549,12 @@ bool Recompiler::Recompile(
         }
         break;
 
+    case PPC_INST_VSRAB:
+        // TODO: vectorize, ensure endianness is correct
+        for (size_t i = 0; i < 16; i++)
+            println("\t{}.s8[{}] = {}.s8[{}] >> ({}.u8[{}] & 0x7);", v(insn.operands[0]), i, v(insn.operands[1]), i, v(insn.operands[2]), i);
+        break;
+
     case PPC_INST_VSRAH:
         // Vector shift right algebraic halfword
         for (size_t i = 0; i < 8; i++)
