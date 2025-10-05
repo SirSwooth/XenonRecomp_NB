@@ -1,3 +1,5 @@
+A fork of XenonRecomp for Banjo-Kazooie: Nuts & Bolts
+
 # XenonRecomp
 
 XenonRecomp is a tool that converts Xbox 360 executables into C++ code, which can then be recompiled for any platform.
